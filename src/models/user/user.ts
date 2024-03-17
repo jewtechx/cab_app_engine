@@ -7,20 +7,25 @@ export const privateField = ['password', '__v', 'verificationCode', 'passwordRes
 
 const userSchema = new Schema<IUserDocument>(
   {
-    username: { type: String, required: true },
+    firstname: { type: String, required: true },
+    lastname: { type: String, required: true },
+    othernames: { type: String, required: true },
     email: { type: String, required: true },
     password: { type: String, required: true },
     type: { type: String, enum: ['DRIVER','PASSENGER'], required: true },
-    verificationCode: { type: String, required: true, default: () => v4() },
+    verificationCode: { type: String, required: true, default: () => v4().slice(0,5) },
     passwordResetCode: { type: String },
     verified: { type: Boolean, required: true, default: false },
     profile: {
-      avatar: {type:String},
-      firstname: { type: String },
-      lastname: { type: String },
-      phoneNumber: { type: String },
-      address: { type: String },
-    },
+      avatar:{ type: String}, 
+      basicInformation: { type: String},
+      ghanaCard: { type: String},
+      driversLicense: { type: String},
+      driverPaymentDetails:{
+        accountNumber:{type: String},
+        bankCode:{type: String},
+      }
+     },
     rating: [{
       ratedBy: { type: Schema.Types.ObjectId }, // User who is giving the rating
       criteria: { type: String }, // Criteria for the rating (e.g., professionalism, communication)
@@ -47,10 +52,7 @@ const userSchema = new Schema<IUserDocument>(
       twoFactorAuthEnabled: { type: Boolean, default: false },
       dataEncryptionEnabled: { type: Boolean, default: false },
     },
-    ownerPayment: {
-      accountNumber : {type:String},
-      bankCode: {type:String}
-    }
+    
   },
   {
     timestamps: true,

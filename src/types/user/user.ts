@@ -2,21 +2,21 @@ import { Model, Types, Document } from 'mongoose';
 
 
 export interface IUserProfile {
-  userId: Types.ObjectId;
-  firstname: string;
-  lastname: string;
-  phoneNumber: string;
-  address: string;
+  avatar:string
+  basicInformation: string;
+  ghanaCard: string;
+  driversLicense: string;
+  driverPaymentDetails?:IDriverPaymentDetails
 }
 export interface IUserProfileInput {
   avatar:string
-  firstname: string;
-  lastname: string;
-  phoneNumber: string;
-  address: string;
+  basicInformation: string;
+  ghanaCard: string;
+  driversLicense: string;
+  driverPaymentDetails?:IDriverPaymentDetails
 }
 
-export interface IOwnerPaymentDetails {
+export interface IDriverPaymentDetails {
   accountNumber:string
   bankCode:string
 }
@@ -56,17 +56,19 @@ export interface IUserRating {
 
 // main user type
 export interface IUser {
-  username: string;
+  firstname: string;
+  lastname: string;
+  othernames:string;
+  phoneNumber: string;
   email: string;
   password: string;
-  type: 'OWNER' | 'AGENT' | 'RENTER';
+  type: 'DRIVER' | 'PASSENGER';
   verificationCode: string;
   passwordResetCode?: string;
   verified: boolean;
   profile?:IUserProfile;
   settings?:IUserSettings;
   rating?:IUserRating[];
-  ownerPayment?:IOwnerPaymentDetails
 }
 
 export interface IUserAuth {
@@ -74,11 +76,12 @@ export interface IUserAuth {
 }
 
 export interface IUserInput {
-  username: string;
+  firstname: string;
+  lastname: string;
+  phoneNumber: string;
   email: string;
   password: string;
-  type: string;
-  verified: boolean;
+  type: 'DRIVER' | 'PASSENGER';
 }
 
 export interface IUserVerificationInput {

@@ -10,17 +10,17 @@ export default class UserService extends IService {
   }
 
   // registers user
-  async registerUser(CreateUnverifiedUserInput: IUserInput): Promise<IUserAuth> {
+  async registerUser(phoneNumber: string): Promise<IUserAuth> {
     try {
-      const _user = await this.models.User.findOne({ email: CreateUnverifiedUserInput.email });
+      const _user = await this.models.User.findOne({ phoneNumber});
       if (_user) throw new Error('User already exists');
 
-      const user = new this.models.User({ ...CreateUnverifiedUserInput });
+      const user = new this.models.User({phoneNumber});
       await user.save();
 
       await sendEmail({
         from: 'jwlarbi15@gmail.com',
-        to: user.email,
+        to: user.phoneNumber,
         subject: 'Please verify your account',
         text: `Verification code : ${user.verificationCode}. Id : ${user._id}`,
       });
@@ -115,9 +115,9 @@ export default class UserService extends IService {
 
   // login user
   async loginUser(LoginUserInput: any) {
-    const { email, password } = LoginUserInput;
+    const { phoneNumber, password } = LoginUserInput;
 
-    const user = await this.models.User.findOne({ email });
+    const user = await this.models.User.findOne({ phoneNumber });
     if (!user) {
       throw new Error('user not found');
     }
