@@ -1,6 +1,14 @@
+import { NextFunction } from 'express';
 import { verifyJwt } from '../utils/token';
+import { JwtPayload } from 'jsonwebtoken';
+import { Request,Response } from 'express';
 
-export const setContext = async ({ req }) => {
+interface AuthRequest extends Request 
+{
+  user?: JwtPayload
+}
+
+export default async function setContext (req:AuthRequest,res:Response,next:NextFunction){
   try {
     const token = req.headers.authorization || '';
     
@@ -11,7 +19,8 @@ export const setContext = async ({ req }) => {
 
       const user = { _id: id };
 
-      return { user };
+      req.user = user;
+      next()
     }
   } catch (err) {
     console.log(err);

@@ -1,6 +1,6 @@
 import { Schema, model, CallbackError } from 'mongoose';
 import { IUserDocument } from '../../types/user/user';
-import { v4 } from 'uuid';
+import code from 'otp-generator'
 import bcrypt from 'bcrypt';
 
 export const privateField = ['password', '__v', 'verificationCode', 'passwordResetCode', 'verified'];
@@ -13,7 +13,7 @@ const userSchema = new Schema<IUserDocument>(
     email: { type: String, required: true },
     password: { type: String, required: true },
     type: { type: String, enum: ['DRIVER','PASSENGER'], required: true },
-    verificationCode: { type: String, required: true, default: () => v4().slice(0,5) },
+    verificationCode: { type: String, required: true, default: () => code.generate(5,{upperCaseAlphabets:true}) },
     passwordResetCode: { type: String },
     verified: { type: Boolean, required: true, default: false },
     profile: {
