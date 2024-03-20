@@ -7,15 +7,16 @@ export const privateField = ['password', '__v', 'verificationCode', 'passwordRes
 
 const userSchema = new Schema<IUserDocument>(
   {
-    firstname: { type: String, required: true },
-    lastname: { type: String, required: true },
-    othernames: { type: String, required: true },
-    email: { type: String, required: true },
-    password: { type: String, required: true },
-    type: { type: String, enum: ['DRIVER','PASSENGER'], required: true },
-    verificationCode: { type: String, required: true, default: () => code.generate(5,{upperCaseAlphabets:true}) },
+    firstname: { type: String },
+    lastname: { type: String },
+    othernames: { type: String },
+    email: { type: String },
+    phoneNumber:{type:String,required:true},
+    password: { type: String },
+    type: { type: String, enum: ['DRIVER','PASSENGER'] },
+    verificationCode: { type: String, required: true, default: () => code.generate(4,{upperCaseAlphabets:false,specialChars:false,lowerCaseAlphabets:false}) },
     passwordResetCode: { type: String },
-    verified: { type: Boolean, required: true, default: false },
+    verified: { type: Boolean, required: true, default:false },
     profile: {
       avatar:{ type: String}, 
       basicInformation: { type: String},
@@ -24,6 +25,12 @@ const userSchema = new Schema<IUserDocument>(
       driverPaymentDetails:{
         accountNumber:{type: String},
         bankCode:{type: String},
+      },
+      vehicleDetails: {
+        brand: {type:String},
+        model: {type:String},
+        numberPlate: {type:String},
+        additionalInformation: {type:String},
       }
      },
     rating: [{

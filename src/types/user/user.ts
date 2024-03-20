@@ -7,6 +7,7 @@ export interface IUserProfile {
   ghanaCard: string;
   driversLicense: string;
   driverPaymentDetails?:IDriverPaymentDetails
+  vehicleDetails?:IDriverVehicleDetails
 }
 export interface IUserProfileInput {
   avatar:string
@@ -14,8 +15,15 @@ export interface IUserProfileInput {
   ghanaCard: string;
   driversLicense: string;
   driverPaymentDetails?:IDriverPaymentDetails
+  vehicleDetails?:IDriverVehicleDetails
 }
 
+interface IDriverVehicleDetails {
+  brand:string;
+  model:string;
+  numberPlate:string;
+  additionalInformation:string
+}
 export interface IDriverPaymentDetails {
   accountNumber:string
   bankCode:string
@@ -56,13 +64,13 @@ export interface IUserRating {
 
 // main user type
 export interface IUser {
-  firstname: string;
-  lastname: string;
-  othernames:string;
+  firstname?: string;
+  lastname?: string;
+  othernames?:string;
   phoneNumber: string;
-  email: string;
-  password: string;
-  type: 'DRIVER' | 'PASSENGER';
+  email?: string;
+  password?: string;
+  type?: 'DRIVER' | 'PASSENGER';
   verificationCode: string;
   passwordResetCode?: string;
   verified: boolean;

@@ -1,4 +1,4 @@
-import { v4 } from 'uuid';
+import otp from "otp-generator"
 import IService, { IAppContext } from '../types/app';
 import { IUserAuth, IUserInput, IUserResetPasswordInput, IUserVerificationInput } from '../types/user/user';
 import sendEmail from '../utils/mailer';
@@ -10,8 +10,9 @@ export default class UserService extends IService {
   }
 
   // registers user
-  async registerUser(phoneNumber: string): Promise<IUserAuth> {
+  async registerUser(input:{phoneNumber:string}): Promise<IUserAuth> {
     try {
+      const {phoneNumber} = input
       const _user = await this.models.User.findOne({ phoneNumber});
       if (_user) throw new Error('User already exists');
 
@@ -20,16 +21,15 @@ export default class UserService extends IService {
 
       await sendEmail({
         from: 'jwlarbi15@gmail.com',
-        to: user.phoneNumber,
+        to: 'jwlarbi15@gmail.com',
         subject: 'Please verify your account',
         text: `Verification code : ${user.verificationCode}. Id : ${user._id}`,
       });
 
-      return {
-        user,
-      };
+      return {user}
+      
     } catch (e) {
-      throw new Error('Error creating new user');
+      throw new Error(`Error creating new user: ${e}`);
     }
   }
 
@@ -39,7 +39,7 @@ export default class UserService extends IService {
     try {
       // Find the user by Id
       const user = await this.authenticate_user(id)
-
+      console.log(user)
       // Check if the user is already verified
       if (user.verified) {
         throw new Error('User is already verified');
@@ -74,7 +74,7 @@ export default class UserService extends IService {
       throw new Error('user is not verified');
     }
 
-    const passwordResetCode = v4();
+    const passwordResetCode = otp.generate(4,{upperCaseAlphabets:false,specialChars:false,lowerCaseAlphabets:false});
 
     user.passwordResetCode = passwordResetCode;
 
