@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express'
 import { IAppContext } from '../../types/app';
 import setContext from '../../middlewares/context';
+import { appContext } from '../../start';
 
-export default function router(appContext:IAppContext){
     const router = express.Router()
 
     router.post('/register',(req:Request,res:Response) => {
@@ -33,7 +33,4 @@ export default function router(appContext:IAppContext){
         return appContext.services.UserService.getUserRating(req.user);
     })
 
-
-    return router
-
-}
+    export default router

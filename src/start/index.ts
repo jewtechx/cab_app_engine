@@ -9,12 +9,12 @@ import { json } from "body-parser";
 import initDb from "../models";
 import initServices from "../services";
 import log from "../utils/log";
-import router from "../routes/auth/auth.router";
+import router from "../routes";
 
+export const appContext: IAppContext = {};
 export default async function start(config: Config) {
   try {
     // setting global context
-    const appContext: IAppContext = {};
 
     // initialize models
     appContext.models = await initDb(config.db)
@@ -36,8 +36,7 @@ export default async function start(config: Config) {
     });
 
     //router
-    const route = router(appContext)
-    app.use(route)
+    app.use(router)
 
     app.listen(config.app.port, () => {
       log.info(
