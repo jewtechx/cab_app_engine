@@ -15,9 +15,8 @@ function signRefreshToken({ userId }) {
     return tslib_1.__awaiter(this, void 0, void 0, function* () {
         const session = createSession({ userId });
         const payload = { session: (yield session)._id };
-        const refreshToken = (0, token_1.signJwt)(payload, {
-            expiresIn: '1y',
-            algorithm: 'RS256',
+        const refreshToken = yield (0, token_1.signJwt)(payload, {
+            expiresIn: '1y'
         });
         return refreshToken;
     });
@@ -29,6 +28,7 @@ function signAccessToken(user) {
         const accessToken = (0, token_1.signJwt)(payload, {
             expiresIn: '1d',
         });
+        console.log(accessToken);
         return accessToken;
     });
 }

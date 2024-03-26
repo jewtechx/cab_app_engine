@@ -77,6 +77,8 @@ export interface IUser {
   profile?:IUserProfile;
   settings?:IUserSettings;
   rating?:IUserRating[];
+  longitude?:number;
+  latitude?:number;
 }
 
 export interface IUserAuth {

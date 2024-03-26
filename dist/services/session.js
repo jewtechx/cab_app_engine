@@ -9,18 +9,19 @@ class UserSessionService extends app_1.default {
         super(props);
     }
     // creates access tokens
-    createUserSession(input) {
+    createUserSession(_id) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const { email } = input;
-            const user = yield this.models.User.findOne({ email });
+            const { id } = _id;
+            const user = yield this.models.User.findById(id);
             if (!user) {
-                throw new Error('Invalid email or password');
+                throw new Error('Invalid id or password');
             }
             if (!user.verified) {
-                throw new Error('Please verify your email');
+                throw new Error('Please verify your phoneNumber');
             }
-            const accessToken = (0, session_1.signAccessToken)(user);
+            const accessToken = yield (0, session_1.signAccessToken)(user);
             const refreshToken = yield (0, session_1.signRefreshToken)({ userId: user._id });
+            console.log(accessToken, refreshToken);
             return {
                 accessToken,
                 refreshToken,
@@ -30,7 +31,8 @@ class UserSessionService extends app_1.default {
     // refreshes access tokens
     refreshAccessToken(refreshToken) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const decoded = yield (0, token_1.verifyJwt)(refreshToken);
+            const { token } = refreshToken;
+            const decoded = yield (0, token_1.verifyJwt)(token);
             if (!decoded) {
                 throw new Error('Could not refresh access token');
             }

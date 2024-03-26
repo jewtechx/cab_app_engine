@@ -6,7 +6,7 @@ dotenv_1.default.config();
 const config = {
     app: {
         name: 'nestly-engine',
-        port: 80,
+        port: 8080,
         env: 'development',
     },
     db: {

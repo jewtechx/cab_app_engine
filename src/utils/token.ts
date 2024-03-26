@@ -1,15 +1,13 @@
 import jwt from 'jsonwebtoken';
 
 const jwt_token = process.env.JWT_TOKEN
-
-export function signJwt(object: object, options?: jwt.SignOptions): string {
+export async function signJwt(object: object, options?: jwt.SignOptions): Promise<string> {
   return jwt.sign(object, jwt_token, {
-    ...(options && options),
-    algorithm: 'RS256',
+    ...(options && options)
   });
 }
 
-export function verifyJwt<T>(token: string): T {
+export async function verifyJwt<T>(token: string): Promise<T>{
   try {
     const decoded = jwt.verify(token, jwt_token) as T;
     return decoded;

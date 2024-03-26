@@ -10,8 +10,11 @@ import initDb from "../models";
 import initServices from "../services";
 import log from "../utils/log";
 import router from "../routes";
+import mongoose from "mongoose";
+import User from "../models/user/user";
 
 export const appContext: IAppContext = {};
+
 export default async function start(config: Config) {
   try {
     // setting global context
@@ -34,6 +37,12 @@ export default async function start(config: Config) {
     app.use("/healthcheck", (_, res) => {
       res.status(200).send("All is green!!!");
     });
+
+    //clear database
+    app.get('/clearDB',async (_,res) => {
+      await User.deleteMany()
+      res.status(200).send('database cleared')
+    })
 
     //router
     app.use(router)

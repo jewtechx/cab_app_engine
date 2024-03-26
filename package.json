@@ -1,8 +1,8 @@
 {
-  "name": "nestly",
+  "name": "cabapp",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/jewtechx/nestly.git",
+  "repository": "https://github.com/jewtechx/cab_app_engine.git",
   "author": "jewtechx <jklarbi_danquah@st.ug.edu.gh>",
   "license": "MIT",
   "dependencies": {

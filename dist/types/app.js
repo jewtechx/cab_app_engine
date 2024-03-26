@@ -15,24 +15,6 @@ class IService {
             return user;
         });
     }
-    authenticate_apartment(apartment) {
-        return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const _apartment = yield this.models.Apartment.findOne({ _id: apartment });
-            if (!_apartment) {
-                throw new Error('Apartment not found');
-            }
-            return _apartment;
-        });
-    }
-    authenticate_booking(booking) {
-        return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const _booking = yield this.models.ApartmentBooking.findOne({ _id: booking });
-            if (!booking) {
-                throw new Error('Booking not found');
-            }
-            return _booking;
-        });
-    }
 }
 exports.default = IService;
 //# sourceMappingURL=app.js.map

@@ -1,35 +1,29 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
-const uuid_1 = require("uuid");
+const otp_generator_1 = tslib_1.__importDefault(require("otp-generator"));
 const app_1 = tslib_1.__importDefault(require("../types/app"));
-const mailer_1 = tslib_1.__importDefault(require("../utils/mailer"));
+const sms_1 = tslib_1.__importDefault(require("../utils/sms"));
 const log_1 = tslib_1.__importDefault(require("../utils/log"));
 class UserService extends app_1.default {
     constructor(context) {
         super(context);
     }
     // registers user
-    registerUser(CreateUnverifiedUserInput) {
+    registerUser(input) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
             try {
-                const _user = yield this.models.User.findOne({ email: CreateUnverifiedUserInput.email });
+                const { phoneNumber } = input;
+                const _user = yield this.models.User.findOne({ phoneNumber });
                 if (_user)
                     throw new Error('User already exists');
-                const user = new this.models.User(Object.assign({}, CreateUnverifiedUserInput));
+                const user = new this.models.User({ phoneNumber });
                 yield user.save();
-                yield (0, mailer_1.default)({
-                    from: 'jwlarbi15@gmail.com',
-                    to: user.email,
-                    subject: 'Please verify your account',
-                    text: `Verification code : ${user.verificationCode}. Id : ${user._id}`,
-                });
-                return {
-                    user,
-                };
+                yield (0, sms_1.default)(phoneNumber, `This is your cab app verification code:${otp_generator_1.default}. Thank you for signing up`);
+                return user;
             }
             catch (e) {
-                throw new Error('Error creating new user');
+                throw new Error(`Error creating new user: ${e}`);
             }
         });
     }
@@ -40,6 +34,7 @@ class UserService extends app_1.default {
             try {
                 // Find the user by Id
                 const user = yield this.authenticate_user(id);
+                console.log(user);
                 // Check if the user is already verified
                 if (user.verified) {
                     throw new Error('User is already verified');
@@ -50,6 +45,7 @@ class UserService extends app_1.default {
                 }
                 // Set verified to true and save user
                 user.verified = true;
+                user.verificationCode = null;
                 yield user.save();
                 return true;
             }
@@ -58,27 +54,22 @@ class UserService extends app_1.default {
             }
         });
     }
-    // sends verification code to user's email
+    // sends password reset code to user's email
     forgotPassword(ForgotPasswordInput) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const { email } = ForgotPasswordInput;
-            const user = yield this.models.User.findOne({ email });
+            const { phoneNumber } = ForgotPasswordInput;
+            const user = yield this.models.User.findOne({ phoneNumber });
             if (!user) {
                 throw new Error('user not found');
             }
             if (!user.verified) {
                 throw new Error('user is not verified');
             }
-            const passwordResetCode = (0, uuid_1.v4)();
+            const passwordResetCode = otp_generator_1.default.generate(4, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets: false });
             user.passwordResetCode = passwordResetCode;
             yield user.save();
-            yield (0, mailer_1.default)({
-                to: user.email,
-                from: 'test@example.com',
-                subject: 'Reset your password',
-                text: `Password reset code: ${passwordResetCode}. Id: ${user._id}`,
-            });
-            log_1.default.debug(`Password reset code sent to ${user.email}`);
+            yield (0, sms_1.default)(phoneNumber, `This is your cab app password reset code:${otp_generator_1.default}`);
+            log_1.default.debug(`Password reset code sent to ${user.phoneNumber}`);
             const message = 'password reset code sent';
             return message;
         });
@@ -88,6 +79,8 @@ class UserService extends app_1.default {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
             const { id, passwordResetCode, newPassword } = ResetPasswordInput;
             const user = yield this.authenticate_user(id);
+            console.log(passwordResetCode);
+            console.log(user.passwordResetCode);
             if (!user || user.passwordResetCode !== passwordResetCode) {
                 throw new Error('Could not reset password');
             }
@@ -101,8 +94,8 @@ class UserService extends app_1.default {
     // login user
     loginUser(LoginUserInput) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const { email, password } = LoginUserInput;
-            const user = yield this.models.User.findOne({ email });
+            const { phoneNumber, password } = LoginUserInput;
+            const user = yield this.models.User.findOne({ phoneNumber });
             if (!user) {
                 throw new Error('user not found');
             }

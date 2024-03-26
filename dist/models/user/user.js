@@ -3,23 +3,35 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.privateField = void 0;
 const tslib_1 = require("tslib");
 const mongoose_1 = require("mongoose");
-const uuid_1 = require("uuid");
-const bcryptjs_1 = tslib_1.__importDefault(require("bcryptjs"));
+const otp_generator_1 = tslib_1.__importDefault(require("otp-generator"));
+const bcrypt_1 = tslib_1.__importDefault(require("bcrypt"));
 exports.privateField = ['password', '__v', 'verificationCode', 'passwordResetCode', 'verified'];
 const userSchema = new mongoose_1.Schema({
-    username: { type: String, required: true },
-    email: { type: String, required: true },
-    password: { type: String, required: true },
-    type: { type: String, enum: ['OWNER', 'RENTER'], required: true },
-    verificationCode: { type: String, required: true, default: () => (0, uuid_1.v4)() },
+    firstname: { type: String },
+    lastname: { type: String },
+    othernames: { type: String },
+    email: { type: String },
+    phoneNumber: { type: String, required: true },
+    password: { type: String },
+    type: { type: String, enum: ['DRIVER', 'PASSENGER'] },
+    verificationCode: { type: String, required: true, default: () => otp_generator_1.default.generate(4, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets: false }) },
     passwordResetCode: { type: String },
     verified: { type: Boolean, required: true, default: false },
     profile: {
         avatar: { type: String },
-        firstname: { type: String },
-        lastname: { type: String },
-        phoneNumber: { type: String },
-        address: { type: String },
+        basicInformation: { type: String },
+        ghanaCard: { type: String },
+        driversLicense: { type: String },
+        driverPaymentDetails: {
+            accountNumber: { type: String },
+            bankCode: { type: String },
+        },
+        vehicleDetails: {
+            brand: { type: String },
+            model: { type: String },
+            numberPlate: { type: String },
+            additionalInformation: { type: String },
+        }
     },
     rating: [{
             ratedBy: { type: mongoose_1.Schema.Types.ObjectId },
@@ -45,10 +57,8 @@ const userSchema = new mongoose_1.Schema({
         twoFactorAuthEnabled: { type: Boolean, default: false },
         dataEncryptionEnabled: { type: Boolean, default: false },
     },
-    ownerPayment: {
-        accountNumber: { type: String },
-        bankCode: { type: String }
-    }
+    latitude: { type: Number, required: false },
+    longitude: { type: Number, required: false },
 }, {
     timestamps: true,
 });
@@ -57,8 +67,8 @@ userSchema.pre('save', function (next) {
         if (!this.isModified('password'))
             return next();
         try {
-            const salt = yield bcryptjs_1.default.genSalt(10);
-            const hash = yield bcryptjs_1.default.hash(this.password, salt);
+            const salt = yield bcrypt_1.default.genSalt(10);
+            const hash = yield bcrypt_1.default.hash(this.password, salt);
             this.password = hash;
             next();
         }
@@ -69,7 +79,7 @@ userSchema.pre('save', function (next) {
 });
 userSchema.methods.validatePassword = function (pass) {
     return tslib_1.__awaiter(this, void 0, void 0, function* () {
-        return bcryptjs_1.default.compare(pass, this.password);
+        return bcrypt_1.default.compare(pass, this.password);
     });
 };
 const User = (0, mongoose_1.model)('User', userSchema);

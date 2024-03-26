@@ -13,7 +13,7 @@ export default async function setContext (req:AuthRequest,res:Response,next:Next
     const token = req.headers.authorization || '';
     
     if (token) {
-      const decoded: any = await verifyJwt(token);
+      const decoded: any = await verifyJwt(token.split(' ')[1]);
 
       const id = decoded._id;
 

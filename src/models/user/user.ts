@@ -59,7 +59,8 @@ const userSchema = new Schema<IUserDocument>(
       twoFactorAuthEnabled: { type: Boolean, default: false },
       dataEncryptionEnabled: { type: Boolean, default: false },
     },
-    
+    latitude:{type: Number, required: false},
+    longitude:{type: Number, required: false},
   },
   {
     timestamps: true,

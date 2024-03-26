@@ -1,8 +1,8 @@
-import otp from "otp-generator"
 import IService, { IAppContext } from '../types/app';
 import { IUserAuth, IUserInput, IUserResetPasswordInput, IUserVerificationInput } from '../types/user/user';
-import sendEmail from '../utils/mailer';
+import sendSms from '../utils/sms';
 import log from '../utils/log';
+import otp from 'otp-generator'
 
 export default class UserService extends IService {
   constructor(context: IAppContext) {
@@ -10,7 +10,7 @@ export default class UserService extends IService {
   }
 
   // registers user
-  async registerUser(input:{phoneNumber:string}): Promise<IUserAuth> {
+  async registerUser(input:{phoneNumber:string}){
     try {
       const {phoneNumber} = input
       const _user = await this.models.User.findOne({ phoneNumber});
@@ -19,14 +19,9 @@ export default class UserService extends IService {
       const user = new this.models.User({phoneNumber});
       await user.save();
 
-      await sendEmail({
-        from: 'jwlarbi15@gmail.com',
-        to: 'jwlarbi15@gmail.com',
-        subject: 'Please verify your account',
-        text: `Verification code : ${user.verificationCode}. Id : ${user._id}`,
-      });
+      await sendSms(phoneNumber,`This is your cab app verification code: ${user.verificationCode}. Thank you for signing up.`)
 
-      return {user}
+      return user
       
     } catch (e) {
       throw new Error(`Error creating new user: ${e}`);
@@ -39,19 +34,22 @@ export default class UserService extends IService {
     try {
       // Find the user by Id
       const user = await this.authenticate_user(id)
-      console.log(user)
       // Check if the user is already verified
       if (user.verified) {
         throw new Error('User is already verified');
       }
 
       // Check if verificationCode matches
+      console.log(verificationCode)
+      console.log(user.verificationCode)
+
       if (user.verificationCode !== verificationCode) {
         throw new Error('Invalid verification code');
       }
 
       // Set verified to true and save user
       user.verified = true;
+      user.verificationCode = null
       await user.save();
 
       return true;
@@ -60,11 +58,11 @@ export default class UserService extends IService {
     }
   }
 
-  // sends verification code to user's email
-  async forgotPassword(ForgotPasswordInput: { email: string }) {
-    const { email } = ForgotPasswordInput;
+  // sends password reset code to user's email
+  async forgotPassword(ForgotPasswordInput: { phoneNumber: string }) {
+    const { phoneNumber } = ForgotPasswordInput;
 
-    const user = await this.models.User.findOne({ email });
+    const user = await this.models.User.findOne({ phoneNumber });
 
     if (!user) {
       throw new Error('user not found');
@@ -80,14 +78,9 @@ export default class UserService extends IService {
 
     await user.save();
 
-    await sendEmail({
-      to: user.email,
-      from: 'test@example.com',
-      subject: 'Reset your password',
-      text: `Password reset code: ${passwordResetCode}. Id: ${user._id}`,
-    });
+    await sendSms(phoneNumber,`This is your cab app password reset code:${otp}`)
 
-    log.debug(`Password reset code sent to ${user.email}`);
+    log.debug(`Password reset code sent to ${user.phoneNumber}`);
 
     const message = 'password reset code sent';
     return message;
@@ -98,6 +91,8 @@ export default class UserService extends IService {
     const { id, passwordResetCode, newPassword } = ResetPasswordInput;
 
     const user = await this.authenticate_user(id)
+    console.log(passwordResetCode)
+    console.log(user.passwordResetCode)
 
     if (!user || user.passwordResetCode !== passwordResetCode) {
       throw new Error('Could not reset password');

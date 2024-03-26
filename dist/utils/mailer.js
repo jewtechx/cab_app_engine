@@ -5,6 +5,10 @@ const nodemailer_1 = tslib_1.__importDefault(require("nodemailer"));
 const log_1 = tslib_1.__importDefault(require("./log"));
 const config_1 = tslib_1.__importDefault(require("../config"));
 const smtp = config_1.default.smtp;
+//  export async function createTestCred(){
+//   const creds = await nodemailer.createTestAccount()
+//   console.log(creds)
+//  }
 const transporter = nodemailer_1.default.createTransport({
     host: smtp.host,
     port: parseInt(smtp.port),

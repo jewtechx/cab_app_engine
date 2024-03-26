@@ -8,23 +8,24 @@ export default class UserSessionService extends IService{
         super(props)
     }
       // creates access tokens
-  async createUserSession(input:any) {
-    const { email } = input;
+  async createUserSession(_id:any) {
 
-    const user = await this.models.User.findOne({ email });
+    const {id} = _id
+    const user = await this.models.User.findById(id);
     
     if (!user) {
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid id or password');
     }
     
     if (!user.verified) {
-      throw new Error('Please verify your email');
+      throw new Error('Please verify your phoneNumber');
     }
     
-    const accessToken = signAccessToken(user);
-
+    const accessToken = await signAccessToken(user);
+    
     const refreshToken = await signRefreshToken({ userId: user._id });
-
+    console.log(accessToken,refreshToken)
+    
     return {
       accessToken,
       refreshToken,
@@ -32,8 +33,9 @@ export default class UserSessionService extends IService{
   }
 
   // refreshes access tokens
-  async refreshAccessToken(refreshToken: string) {
-    const decoded = await verifyJwt<{ session: string }>(refreshToken);
+  async refreshAccessToken(refreshToken: {token:string}) {
+    const {token} = refreshToken
+    const decoded = await verifyJwt<{ session: string }>(token);
 
     if (!decoded) {
       throw new Error('Could not refresh access token');

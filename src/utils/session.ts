@@ -12,9 +12,8 @@ export async function signRefreshToken({ userId }: { userId: Types.ObjectId }) {
   const session = createSession({ userId });
 
   const payload = { session: (await session)._id };
-  const refreshToken = signJwt(payload, {
-    expiresIn: '1y',
-    algorithm: 'RS256',
+  const refreshToken = await signJwt(payload, {
+    expiresIn: '1y'
   });
 
   return refreshToken;
@@ -26,6 +25,8 @@ export async function signAccessToken(user: any) {
   const accessToken = signJwt(payload, {
     expiresIn: '1d',
   });
+  console.log(accessToken)
+
 
   return accessToken;
 }
