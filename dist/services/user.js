@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
-const otp_generator_1 = tslib_1.__importDefault(require("otp-generator"));
 const app_1 = tslib_1.__importDefault(require("../types/app"));
 const sms_1 = tslib_1.__importDefault(require("../utils/sms"));
 const log_1 = tslib_1.__importDefault(require("../utils/log"));
+const otp_generator_1 = tslib_1.__importDefault(require("otp-generator"));
 class UserService extends app_1.default {
     constructor(context) {
         super(context);
@@ -19,7 +19,7 @@ class UserService extends app_1.default {
                     throw new Error('User already exists');
                 const user = new this.models.User({ phoneNumber });
                 yield user.save();
-                yield (0, sms_1.default)(phoneNumber, `This is your cab app verification code:${otp_generator_1.default}. Thank you for signing up`);
+                yield (0, sms_1.default)(phoneNumber, `This is your cab app verification code: ${user.verificationCode}. Thank you for signing up.`);
                 return user;
             }
             catch (e) {
@@ -34,18 +34,16 @@ class UserService extends app_1.default {
             try {
                 // Find the user by Id
                 const user = yield this.authenticate_user(id);
-                console.log(user);
                 // Check if the user is already verified
                 if (user.verified) {
                     throw new Error('User is already verified');
                 }
                 // Check if verificationCode matches
-                if (user.verificationCode !== verificationCode) {
+                if (user.verificationCode != verificationCode) {
                     throw new Error('Invalid verification code');
                 }
                 // Set verified to true and save user
                 user.verified = true;
-                user.verificationCode = null;
                 yield user.save();
                 return true;
             }
@@ -68,7 +66,7 @@ class UserService extends app_1.default {
             const passwordResetCode = otp_generator_1.default.generate(4, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets: false });
             user.passwordResetCode = passwordResetCode;
             yield user.save();
-            yield (0, sms_1.default)(phoneNumber, `This is your cab app password reset code:${otp_generator_1.default}`);
+            yield (0, sms_1.default)(phoneNumber, `This is your cab app password reset code:${user.passwordResetCode}`);
             log_1.default.debug(`Password reset code sent to ${user.phoneNumber}`);
             const message = 'password reset code sent';
             return message;
@@ -137,31 +135,13 @@ class UserService extends app_1.default {
             }
         });
     }
-    //update profile picture
-    updateProfilePicture(userId) {
-        return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const user = yield this.authenticate_user(userId);
-            // avatar is from standalone file upload server
-            const avatars = yield this.models.Image.find({ useId: user._id });
-            if (!avatars) {
-                throw new Error(`No avatar found for this user`);
-            }
-            const avatar = [...avatars].reverse();
-            console.log(avatar);
-            const { path } = avatar[0];
-            yield user.updateOne({
-                $set: {
-                    profile: { avatar: path }
-                }
-            }, { new: true, upsert: true });
-            yield user.save();
-            return avatar[0];
-        });
-    }
     // deletes user account
     deleteUser(id) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
             const user = yield this.authenticate_user(id);
+            if (!user) {
+                throw new Error('Error deleting user');
+            }
             try {
                 yield this.models.User.findByIdAndDelete(id);
                 return `Deleted user successfully`;
@@ -190,7 +170,6 @@ class UserService extends app_1.default {
                 };
             }
             catch (error) {
-                console.error('Error fetching ratings for user:', error);
                 throw new Error('Failed to fetch ratings');
             }
         });

@@ -21,7 +21,6 @@ class UserSessionService extends app_1.default {
             }
             const accessToken = yield (0, session_1.signAccessToken)(user);
             const refreshToken = yield (0, session_1.signRefreshToken)({ userId: user._id });
-            console.log(accessToken, refreshToken);
             return {
                 accessToken,
                 refreshToken,
@@ -29,9 +28,8 @@ class UserSessionService extends app_1.default {
         });
     }
     // refreshes access tokens
-    refreshAccessToken(refreshToken) {
+    refreshAccessToken(token) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const { token } = refreshToken;
             const decoded = yield (0, token_1.verifyJwt)(token);
             if (!decoded) {
                 throw new Error('Could not refresh access token');

@@ -5,12 +5,13 @@ const token_1 = require("../utils/token");
 function setContext(req, res, next) {
     return tslib_1.__awaiter(this, void 0, void 0, function* () {
         try {
-            const token = req.headers.authorization || '';
+            let token;
+            req.cookies['tokens'] ? token = req.cookies['tokens'].accessToken : '';
             if (token) {
-                const decoded = yield (0, token_1.verifyJwt)(token.split(' ')[1]);
+                const decoded = yield (0, token_1.verifyJwt)(token);
                 const id = decoded._id;
                 const user = { _id: id };
-                req.user = user;
+                user ? req.user = user : null;
                 next();
             }
         }

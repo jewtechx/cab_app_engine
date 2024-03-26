@@ -40,16 +40,12 @@ export default class UserService extends IService {
       }
 
       // Check if verificationCode matches
-      console.log(verificationCode)
-      console.log(user.verificationCode)
-
-      if (user.verificationCode !== verificationCode) {
+      if (user.verificationCode != verificationCode) {
         throw new Error('Invalid verification code');
       }
 
       // Set verified to true and save user
       user.verified = true;
-      user.verificationCode = null
       await user.save();
 
       return true;
@@ -78,7 +74,7 @@ export default class UserService extends IService {
 
     await user.save();
 
-    await sendSms(phoneNumber,`This is your cab app password reset code:${otp}`)
+    await sendSms(phoneNumber,`This is your cab app password reset code:${user.passwordResetCode}`)
 
     log.debug(`Password reset code sent to ${user.phoneNumber}`);
 
@@ -156,35 +152,12 @@ export default class UserService extends IService {
     }
   }
   
-  //update profile picture
-  async updateProfilePicture(userId:any){
-    const user = await this.authenticate_user(userId)
-
-    // avatar is from standalone file upload server
-    const avatars = await this.models.Image.find({useId:user._id})
-
-    if(!avatars){
-      throw new Error(`No avatar found for this user`)
-    }
-
-    const avatar = [...avatars].reverse()
-    console.log(avatar)
-    const {path} = avatar[0]
-
-    await user.updateOne({
-      $set : {
-        profile : {avatar:path}
-      }
-    },{new:true,upsert:true})
-
-    await user.save()
-
-    return avatar[0]
-  }
-
   // deletes user account
   async deleteUser(id: any) {
     const user = await this.authenticate_user(id)
+    if(!user){
+      throw new Error('Error deleting user')
+    }
 
     try {
       await this.models.User.findByIdAndDelete(id);
@@ -198,7 +171,6 @@ export default class UserService extends IService {
   async getUserRating(userId: any) {
     try {
       const user = await this.models.User.findOne({_id:userId});
-
       if (user.rating.length === 0) {
         return {
           averageRating: 0,
@@ -214,7 +186,6 @@ export default class UserService extends IService {
         totalRatings: user.rating.length,
       };
     } catch (error) {
-      console.error('Error fetching ratings for user:', error);
       throw new Error('Failed to fetch ratings');
     }
   }

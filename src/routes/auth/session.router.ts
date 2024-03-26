@@ -1,6 +1,4 @@
 import express, { Request, Response } from 'express';
-import { IAppContext } from '../../types/app';
-import setContext from '../../middlewares/context';
 import { appContext } from '../../start';
 
 const router = express.Router()
@@ -8,19 +6,24 @@ const router = express.Router()
 router.post('/session/create',async (req:Request,res:Response) => {
     try{
         const tokens = await appContext.services.UserSessionService.createUserSession(req.body)
-        res.status(201).json(tokens)
+        res.cookie('tokens',{
+            accessToken:tokens.accessToken,
+            refreshToken:tokens.refreshToken,
+        })
+        res.status(201).json({message:'tokens sent as cookies'})
     }catch(e){
-        res.status(500)
+        res.status(500).send('Error creating tokens')
     }
 
 })
 
 router.post('/session/refresh',async (req:Request,res:Response) => {
     try{
-        const token = await appContext.services.UserSessionService.refreshAccessToken(req.body)
-        res.status(201).json(token)
+        const token = await appContext.services.UserSessionService.refreshAccessToken(req.cookies['tokens'].refreshToken)
+        res.cookie('access-token',token.accessToken)
+        res.status(201).json({message:'tokens sent as cookies'})
     }catch(e){
-        res.status(500)
+        res.status(500).send('Error creating token')
     }
 
 })

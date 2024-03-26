@@ -1,25 +1,19 @@
 import { NextFunction } from 'express';
 import { verifyJwt } from '../utils/token';
-import { JwtPayload } from 'jsonwebtoken';
 import { Request,Response } from 'express';
 
-interface AuthRequest extends Request 
-{
-  user?: JwtPayload
-}
-
-export default async function setContext (req:AuthRequest,res:Response,next:NextFunction){
+export default async function setContext (req:Request & {user:{_id:string}},res:Response,next:NextFunction){
   try {
-    const token = req.headers.authorization || '';
+    let token
+    req.cookies['tokens'] ? token = req.cookies['tokens'].accessToken : '';
     
     if (token) {
-      const decoded: any = await verifyJwt(token.split(' ')[1]);
-
+      const decoded: any = await verifyJwt(token);
+      
       const id = decoded._id;
-
+      
       const user = { _id: id };
-
-      req.user = user;
+      user ? req.user = user : null;
       next()
     }
   } catch (err) {

@@ -1,12 +1,19 @@
 import express, { Request, Response } from 'express';
 import { IAppContext } from '../../types/app';
 import setContext from '../../middlewares/context';
-import { appContext } from '../../start';
+import { appContext, uploadAvatar } from '../../start';
+import User from '../../models/user/user';
 
 const router = express.Router();
 
 router.get('/me',setContext,async (req: Request & { user: any }, res: Response) => {
-  res.status(200).json(req.user)
+  const user = await User.findOne({_id:req.user._id})
+  res.status(200).json(user)
+})
+
+router.get('/users',setContext,async (_:any, res: Response) => {
+  const user = await User.find()
+  res.status(200).json(user)
 })
 
 router.post('/register', async (req: Request, res: Response) => {
@@ -57,28 +64,49 @@ router.put('/updateuser', setContext, async(req: Request & { user: any }, res: R
     res.status(500);
   }
 });
-router.delete('/deleteuser', (req: Request & { user: any }, res: Response) => {
+router.delete('/deleteuser',setContext, async(req: Request & { user: any }, res: Response) => {
   try {
-    const message = appContext.services.UserService.deleteUser(req.user);
+    const message = await appContext.services.UserService.deleteUser(req.user._id);
     res.status(201).json(message);
   } catch (e) {
     res.status(500).json({ error: e });
   }
 });
-router.post('/updateprofilepicture', (req: Request & { user: any }, res: Response) => {
+
+router.post('/uploadprofilepicture', setContext, async (req: Request & { user: any, file: { path: string } }, res: Response) => {
   try {
-    const message = appContext.services.UserService.updateProfilePicture(req.user);
-    res.status(201).json(message);
+    const user = await User.findOne({ _id: req.user._id });
+
+    if (!user || !user.verified) {
+      return res.status(500).send('User not verified');
+    }
+
+    uploadAvatar(req, res, async (err) => {
+      if (err) {
+        return res.status(500).send(err.message);
+      }
+
+      try {
+        await user.updateOne({ $set: { profile: { avatar: req.file.path } } }, { new: true, upsert: true });
+        await user.save();
+        res.status(201).send('Avatar uploaded');
+      } catch (e) {
+        res.status(500).send('Error updating user profile');
+      }
+      res.status(201).send('Avatar uploaded');
+    });
   } catch (e) {
-    res.status(500).json({ error: e });
+    res.status(500).send('Error processing request');
   }
 });
-router.get('/getuserrating', (req: Request & { user: any }, res: Response) => {
+
+
+router.get('/getuserrating',setContext, async(req: Request & { user: any }, res: Response) => {
   try {
-    const rating = appContext.services.UserService.getUserRating(req.user);
+    const rating = await appContext.services.UserService.getUserRating(req.user._id);
     res.status(201).json(rating);
   } catch (e) {
-    res.status(500).json({ error: e });
+    res.status(500).send('error getting user rating');
   }
 });
 

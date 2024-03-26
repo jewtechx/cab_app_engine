@@ -24,7 +24,6 @@ export default class UserSessionService extends IService{
     const accessToken = await signAccessToken(user);
     
     const refreshToken = await signRefreshToken({ userId: user._id });
-    console.log(accessToken,refreshToken)
     
     return {
       accessToken,
@@ -33,8 +32,7 @@ export default class UserSessionService extends IService{
   }
 
   // refreshes access tokens
-  async refreshAccessToken(refreshToken: {token:string}) {
-    const {token} = refreshToken
+  async refreshAccessToken(token:string) {
     const decoded = await verifyJwt<{ session: string }>(token);
 
     if (!decoded) {

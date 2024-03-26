@@ -17,7 +17,7 @@ function sendSms(phone, message) {
         };
         const body = {
             from: "CAB_APP",
-            to: `+${phone}`,
+            to: `${phone}`,
             type: "1",
             message: message,
             app_id: process.env.APP_ID,
