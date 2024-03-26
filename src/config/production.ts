@@ -7,6 +7,7 @@ const config: Config = {
     name: 'nestly-engine',
     port: process.env.PORT || 8080,
     env: 'production',
+    baseUrl: process.env.APP_URL
   },
   db: {
     uri: process.env.PROD_MONGO_URI || '',
@@ -23,6 +24,12 @@ const config: Config = {
   },
   paystack: {
     secret_key: process.env.PAYSTACK_LIVE_SECRET_KEY || ''
+  },
+  oauth: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_ID || ''
+    }
   }
 };
 

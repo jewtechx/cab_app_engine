@@ -5,12 +5,9 @@ import log from '../utils/log';
 // user
 import User from './user/user';
 
-//image
-import Image from './image';
 
 export interface IModels {
   User: typeof User;
-  Image: typeof Image
 }
 
 export default async function initDB(config: Config['db']): Promise<IModels> {
@@ -19,11 +16,9 @@ export default async function initDB(config: Config['db']): Promise<IModels> {
     log.info('Connected to database successfully');
 
     await User.createCollection();
-    await Image.createCollection();
 
     return {
-      User,
-      Image
+      User
     };
   } catch (e) {
     throw new Error(`Error while connecting to database : ${e}`);

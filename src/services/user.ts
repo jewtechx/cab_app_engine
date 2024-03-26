@@ -10,62 +10,72 @@ export default class UserService extends IService {
   }
 
   // registers user
-  async registerUser(input:{phoneNumber:string}){
+  async registerUser(req,res){
     try {
-      const {phoneNumber} = input
+      const {phoneNumber} = req.body
+      if(!phoneNumber){
+        res.status(422).send('no input was received')
+      }
       const _user = await this.models.User.findOne({ phoneNumber});
       if (_user) throw new Error('User already exists');
-
+      
       const user = new this.models.User({phoneNumber});
       await user.save();
-
+      
       await sendSms(phoneNumber,`This is your cab app verification code: ${user.verificationCode}. Thank you for signing up.`)
-
+      
       return user
       
     } catch (e) {
-      throw new Error(`Error creating new user: ${e}`);
+      res.status(500).send(`Error creating new user: ${e}`)
     }
   }
 
   //verifies user
-  async verifyUser(VerifyUserInput: IUserVerificationInput): Promise<boolean> {
-    const { id, verificationCode } = VerifyUserInput;
+  async verifyUser(req,res): Promise<boolean> {
+    const { id, verificationCode } = req.body;
+    if(!id || !verificationCode){
+      res.status(422).send('missing required fields')
+    }
     try {
       // Find the user by Id
       const user = await this.authenticate_user(id)
       // Check if the user is already verified
       if (user.verified) {
-        throw new Error('User is already verified');
+        res.status(500).send('user is already verified')
       }
-
+      
       // Check if verificationCode matches
       if (user.verificationCode != verificationCode) {
-        throw new Error('Invalid verification code');
+        res.status(500).send('Invalid verification code')
       }
-
+      
       // Set verified to true and save user
       user.verified = true;
       await user.save();
-
+      
       return true;
     } catch (e) {
-      throw new Error(`Error validating user: ${e}`);
+      res.status(500).send(`Error validating user: ${e}`)
     }
   }
 
   // sends password reset code to user's email
-  async forgotPassword(ForgotPasswordInput: { phoneNumber: string }) {
-    const { phoneNumber } = ForgotPasswordInput;
-
-    const user = await this.models.User.findOne({ phoneNumber });
-
-    if (!user) {
-      throw new Error('user not found');
+  async forgotPassword(req,res) {
+   try{
+    const { phoneNumber } = req.body;
+    if(!phoneNumber){
+      res.status(422).send('no input received')
     }
-
+    
+    const user = await this.models.User.findOne({ phoneNumber });
+    
+    if (!user) {
+      res.status(404).send('user not found')
+    }
+    
     if (!user.verified) {
-      throw new Error('user is not verified');
+      res.status(500).send('user is not verified')
     }
 
     const passwordResetCode = otp.generate(4,{upperCaseAlphabets:false,specialChars:false,lowerCaseAlphabets:false});
@@ -80,18 +90,24 @@ export default class UserService extends IService {
 
     const message = 'password reset code sent';
     return message;
+   }catch(e){
+    res.status(500).send(`error handing password reset: ${e}`)
+   }
   }
 
   // resets user's password to new password from email
-  async resetPassword(ResetPasswordInput: IUserResetPasswordInput) {
-    const { id, passwordResetCode, newPassword } = ResetPasswordInput;
+  async resetPassword(req,res) {
+    try{
+      const { id, passwordResetCode, newPassword } = req.body;
+
+    if(!id || !passwordResetCode || !newPassword ){
+      res.status(422).send('missing required fields')
+    }
 
     const user = await this.authenticate_user(id)
-    console.log(passwordResetCode)
-    console.log(user.passwordResetCode)
 
     if (!user || user.passwordResetCode !== passwordResetCode) {
-      throw new Error('Could not reset password');
+      res.status(404).send('Could not reset password');
     }
 
     user.passwordResetCode = null;
@@ -102,44 +118,50 @@ export default class UserService extends IService {
 
     const message = 'Successfully updated password';
     return message;
+    }catch(e){
+      res.status(500).send('error reseting password')
+    }
   }
 
   // login user
-  async loginUser(LoginUserInput: any) {
-    const { phoneNumber, password } = LoginUserInput;
+  async loginUser(req,res) {
+    const { phoneNumber, password } = req.body;
+    if(!phoneNumber || !password){
+      res.status(500).send('missing required fields')
+    }
 
     const user = await this.models.User.findOne({ phoneNumber });
     if (!user) {
-      throw new Error('user not found');
+      res.status(404).send('user not found');
     }
 
     try {
       const valid = await user.validatePassword(password);
       if (!valid) {
-        throw new Error('password incorrect');
+        res.status(500).send('password incorrect');
       }
     } catch (e) {
-      throw new Error(e);
+      res.status(500).send('error logging in')
     }
 
     return user;
   }
 
   // updates user details
-  async updateUser(UpdateUserInput: any, userId: any) {
+  async updateUser(req,res) {
     try {
-      const user = await this.authenticate_user(userId)
+      const user = await this.authenticate_user(req.user._id)
   
-      if ('rating' in UpdateUserInput) {
-        user.rating = UpdateUserInput.rating;
+      if ('rating' in req.body) {
+        user.rating = req.body.rating;
       } else {
-        if (user._id.toString() !== userId.toString()) {
+        if (user._id.toString() !== req.user._id.toString()) {
           throw new Error(`Unauthorized: Cannot update another user's details`);
         }
   
-        for (const key in UpdateUserInput) {
+        for (const key in req.body) {
           if (key !== 'rating') {
-            user[key] = UpdateUserInput[key];
+            user[key] = req.body[key];
           }
         }
       }
@@ -148,29 +170,29 @@ export default class UserService extends IService {
   
       return user;
     } catch (e) {
-      throw new Error(`Error updating user: ${e.message}`);
+      res.status(500).send(`Error updating user: ${e.message}`);
     }
   }
   
   // deletes user account
-  async deleteUser(id: any) {
-    const user = await this.authenticate_user(id)
+  async deleteUser(req,res) {
+    const user = await this.authenticate_user(req.user._id)
     if(!user){
-      throw new Error('Error deleting user')
+      res.status(404).send('Error deleting user')
     }
 
     try {
-      await this.models.User.findByIdAndDelete(id);
-      return `Deleted user successfully`;
+      await this.models.User.findByIdAndDelete(req.user._id);
+      res.status(200).send(`Deleted user successfully`);
     } catch (e) {
-      throw new Error(`Error deleting user`);
+      res.status(500).send(`Error deleting user`);
     }
   }
 
   // getting user rating
-  async getUserRating(userId: any) {
+  async getUserRating(req,res) {
     try {
-      const user = await this.models.User.findOne({_id:userId});
+      const user = await this.models.User.findOne({_id:req.user._id});
       if (user.rating.length === 0) {
         return {
           averageRating: 0,
@@ -186,7 +208,7 @@ export default class UserService extends IService {
         totalRatings: user.rating.length,
       };
     } catch (error) {
-      throw new Error('Failed to fetch ratings');
+      res.status(500).send('Failed to fetch ratings');
     }
   }
 }

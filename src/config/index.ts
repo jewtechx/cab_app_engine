@@ -7,6 +7,7 @@ export interface Config {
     name: string;
     env: 'production' | 'development' | 'test';
     port: string | number;
+    baseUrl: string
   };
 
   db: {
@@ -24,6 +25,12 @@ export interface Config {
   };
   paystack: {
     secret_key:string
+  };
+  oauth: {
+    google: {
+      clientId:string;
+      clientSecret:string;
+    }
   }
 }
 

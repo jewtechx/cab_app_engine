@@ -1,7 +1,7 @@
 "use strict";
 
 import { Config } from "../config";
-import express from "express";
+import express, { Request } from "express";
 import { IAppContext } from "../types/app";
 import cors from "cors";
 import { json } from "body-parser";
@@ -14,6 +14,7 @@ import log from "../utils/log";
 import router from "../routes";
 import mongoose from "mongoose";
 import User from "../models/user/user";
+import setContext from "../middlewares/context";
 
 export const appContext: IAppContext = {};
 export let uploadAvatar;
@@ -55,7 +56,7 @@ export default async function start(config: Config) {
 
     // file uploads
     const avatarStorage = multer.diskStorage({
-      destination: path.join(__dirname, '../uploads/avatars'),
+      destination: path.join(__dirname, '..','uploads','avatars'),
       filename: function (req, file, cb) {
         cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
       }
@@ -79,7 +80,42 @@ export default async function start(config: Config) {
       fileFilter: function (req, file, cb) {
         checkFileType(file, cb);
       }
-    }).single('avatar');
+    });
+
+    interface FileRequest extends Request {
+      user? : {
+        _id:string
+      },
+      file?: {
+        path?:string
+      }
+    }
+    app.post('/uploadprofilepicture', setContext, async (req:FileRequest, res) => {
+      try {
+        const user = await User.findOne({ _id: req.user._id });
+    
+        if (!user || !user.verified) {
+          return res.status(400).send('User not verified');
+        }
+    
+        uploadAvatar(req, res, async (err) => {
+          if (err) {
+            return res.status(500).send(err.message);
+          }
+    
+          try {
+            await user.updateOne({ $set: { profile: { avatar: req.file.path } } }, { new: true, upsert: true });
+            await user.save();
+            return res.status(201).send('Avatar uploaded');
+          } catch (e) {
+            return res.status(500).send(`Error updating user profile: ${e}`);
+          }
+        });
+      } catch (e) {
+        return res.status(500).send(`Error processing request: ${e}`);
+      }
+    });
+    
 
     app.use(express.static(path.join(__dirname, '..', 'public')));
     app.get('/uploadfile', (req, res) => {

@@ -17,97 +17,43 @@ router.get('/users',setContext,async (_:any, res: Response) => {
 })
 
 router.post('/register', async (req: Request, res: Response) => {
-  try {
-    const user = await appContext.services.UserService.registerUser(req.body);
-    res.status(201).json({ user });
-  } catch(e) {
-    res.status(500).send('error creating user');
-  }
+    const user = await appContext.services.UserService.registerUser(req,res);
+    return res.status(201).json({ user });
 });
+
 router.post('/verify', async(req: Request, res: Response) => {
-  try {
-    const response = await appContext.services.UserService.verifyUser(req.body);
+    const response = await appContext.services.UserService.verifyUser(req,res);
     res.status(200).json(response);
-  } catch (e) {
-    res.status(500).send('error verifying user');
-  }
 });
+
 router.post('/forgotpassword', async(req: Request, res: Response) => {
-  try {
-    const response = await appContext.services.UserService.forgotPassword(req.body);
+    const response = await appContext.services.UserService.forgotPassword(req,res);
     res.status(200).json(response);
-  } catch (e) {
-    res.status(500).send('error reseting password');
-  }
 });
+
 router.post('/resetpassword', async(req: Request, res: Response) => {
-  try {
-    const response = await appContext.services.UserService.resetPassword(req.body);
+    const response = await appContext.services.UserService.resetPassword(req,res);
     res.status(200).json(response);
-  } catch (e) {
-    res.status(500);
-  }
 });
+
 router.post('/login', async(req: Request, res: Response) => {
-  try {
-    const user = await appContext.services.UserService.loginUser(req.body);
+    const user = await appContext.services.UserService.loginUser(req,res);
     res.status(200).json(user);
-  } catch (e) {
-    res.status(500);
-  }
 });
+
 router.put('/updateuser', setContext, async(req: Request & { user: any }, res: Response) => {
-  try {
-    const user = await appContext.services.UserService.updateUser(req.body, req.user._id);
+    const user = await appContext.services.UserService.updateUser(req,res);
     res.status(200).json(user);
-  } catch (e) {
-    res.status(500);
-  }
 });
+
 router.delete('/deleteuser',setContext, async(req: Request & { user: any }, res: Response) => {
-  try {
-    const message = await appContext.services.UserService.deleteUser(req.user._id);
-    res.status(201).json(message);
-  } catch (e) {
-    res.status(500).json({ error: e });
-  }
+    await appContext.services.UserService.deleteUser(req,res);
 });
-
-router.post('/uploadprofilepicture', setContext, async (req: Request & { user: any, file: { path: string } }, res: Response) => {
-  try {
-    const user = await User.findOne({ _id: req.user._id });
-
-    if (!user || !user.verified) {
-      return res.status(500).send('User not verified');
-    }
-
-    uploadAvatar(req, res, async (err) => {
-      if (err) {
-        return res.status(500).send(err.message);
-      }
-
-      try {
-        await user.updateOne({ $set: { profile: { avatar: req.file.path } } }, { new: true, upsert: true });
-        await user.save();
-        res.status(201).send('Avatar uploaded');
-      } catch (e) {
-        res.status(500).send('Error updating user profile');
-      }
-      res.status(201).send('Avatar uploaded');
-    });
-  } catch (e) {
-    res.status(500).send('Error processing request');
-  }
-});
-
 
 router.get('/getuserrating',setContext, async(req: Request & { user: any }, res: Response) => {
-  try {
-    const rating = await appContext.services.UserService.getUserRating(req.user._id);
+    const rating = await appContext.services.UserService.getUserRating(req,res);
     res.status(201).json(rating);
-  } catch (e) {
-    res.status(500).send('error getting user rating');
-  }
+
 });
 
 export default router;

@@ -90,6 +90,114 @@ npm run dev
 
 The engine will start running on the specified port, and you can access the GraphQL endpoint in your browser at `http://localhost:8080`.
 
+## Routes
+
+**Base Url**
+ ```bash 
+http://localhost:8080
+```
+**Authentication - SMS OTP**
+ ```bash 
+/auth/register
+```
+This route registers a new user
+
+_request_
+ ```bash 
+{
+  "phoneNumber":"233265865717"
+}
+```
+_response_
+ ```bash 
+{
+  "user": {
+    "phoneNumber": "233265865717",
+    "verified": false,
+    "settings": {
+      "language": "EN",
+      "theme": "LIGHT",
+      "notificationEnabled": true,
+      "soundEnabled": true,
+      "autoSaveInterval": 10,
+      "profileVisibility": "PUBLIC",
+      "contactInfoVisibility": "PUBLIC",
+      "locationSharingEnabled": true,
+      "activityTrackingEnabled": true,
+      "dataSharingEnabled": true,
+      "dataRetentionPeriod": 365,
+      "twoFactorAuthEnabled": false,
+      "dataEncryptionEnabled": false
+    },
+    "_id": "6602df812ad5f9d765f57219",
+    "verificationCode": "6019",
+    "rating": [],
+    "createdAt": "2024-03-26T14:45:21.359Z",
+    "updatedAt": "2024-03-26T14:45:21.359Z",
+    "__v": 0
+  }
+}
+```
+
+ ```bash 
+/auth/verify
+```
+This route verifies the new user
+
+_request_
+ ```bash 
+{
+  "id":"6602d308ada621866a6c9ff3",
+  "verificationCode":"7648"
+}
+```
+
+return true or false
+
+
+ ```bash 
+/auth/login
+```
+This route allows a user to login
+
+_request_
+ ```bash 
+{
+  "phoneNumber":"233265865717",
+  "password":"password"
+}
+```
+
+_response_
+```bash
+{
+  "user": {
+    "phoneNumber": "233265865717",
+    "verified": false,
+    "settings": {
+      "language": "EN",
+      "theme": "LIGHT",
+      "notificationEnabled": true,
+      "soundEnabled": true,
+      "autoSaveInterval": 10,
+      "profileVisibility": "PUBLIC",
+      "contactInfoVisibility": "PUBLIC",
+      "locationSharingEnabled": true,
+      "activityTrackingEnabled": true,
+      "dataSharingEnabled": true,
+      "dataRetentionPeriod": 365,
+      "twoFactorAuthEnabled": false,
+      "dataEncryptionEnabled": false
+    },
+    "_id": "6602df812ad5f9d765f57219",
+    "verificationCode": "6019",
+    "rating": [],
+    "createdAt": "2024-03-26T14:45:21.359Z",
+    "updatedAt": "2024-03-26T14:45:21.359Z",
+    "__v": 0
+  }
+}
+```
 
 
 ## Contributing
