@@ -5,7 +5,7 @@ import { Request,Response } from 'express';
 export default async function setContext (req:Request & {user:{_id:string}},res:Response,next:NextFunction){
   try {
     let token
-    req.cookies['tokens'] ? token = req.cookies['tokens'].accessToken : '';
+    req.cookies['access-token'] ? token = req.cookies['access-token'] : '';
     
     if (token) {
       const decoded: any = await verifyJwt(token);

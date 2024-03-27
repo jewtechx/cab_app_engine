@@ -2,6 +2,7 @@ import express from "express";
 import { google } from "googleapis";
 import config from "../../config";
 import { signJwt } from "../../utils/token";
+import User from "../../models/user/user";
 
 const {oauth:
     {google:
@@ -40,26 +41,38 @@ router.get("/google/url", (req, res) => {
 // Exchange code for tokens and fetch user profile
 router.get(`/google/callback`, async (req, res) => {
   const code = req.query.code as string;
-console.log('clientID',clientId)
-console.log('clientSecret',clientSecret)
   try {
     const { tokens } = await oauth2Client.getToken(code);
-    console.log(tokens)
     oauth2Client.setCredentials(tokens);
 
     const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
     const { data: googleUser } = await oauth2.userinfo.get();
-    console.log(googleUser)
 
-    const token = signJwt(googleUser);
+    const {email,verified_email,given_name,family_name,picture,locale} = googleUser
 
-    res.cookie('tokens', token, {
+    const user = await User.findOne({email})
+
+    let newUser
+    if(!user){
+      newUser = new User({
+      email,
+      verified:verified_email,
+      firstname:given_name,
+      lastname:family_name,
+      profile:{avatar:picture},
+      settings:{language:locale.split('-')[0].toUpperCase()}
+    })
+    }
+
+    const token = await signJwt(googleUser);
+
+    res.cookie('access-token', token, {
       maxAge: 900000,
       httpOnly: true,
       secure: false,
     });
 
-    res.redirect(baseUrl);
+    return res.status(201).send('google oauth complete')
   } catch (error) {
     res.status(500).send(`Error fetching user: ${error}`);
   }
