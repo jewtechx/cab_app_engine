@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { IAppContext } from '../../types/app';
 import setContext from '../../middlewares/context';
-import { appContext, uploadAvatar } from '../../start';
+import { appContext} from '../../start';
 import User from '../../models/user/user';
 
 const router = express.Router();

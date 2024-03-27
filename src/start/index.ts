@@ -17,7 +17,6 @@ import User from "../models/user/user";
 import setContext from "../middlewares/context";
 
 export const appContext: IAppContext = {};
-export let uploadAvatar;
 
 export default async function start(config: Config) {
   try {
@@ -70,11 +69,11 @@ export default async function start(config: Config) {
       if (extname && mimetype) {
         return cb(null, true);
       } else {
-        cb('Error: Images only! (jpeg, jpg, png)');
+        throw new Error('Error: Images only! (jpeg, jpg, png)');
       }
     }
 
-    uploadAvatar = multer({
+   const uploadAvatar = multer({
       storage: avatarStorage,
       limits: { fileSize: 10000000 }, // Limit file size to 10MB
       fileFilter: function (req, file, cb) {
@@ -90,27 +89,12 @@ export default async function start(config: Config) {
         path?:string
       }
     }
-    app.post('/uploadprofilepicture', setContext, async (req:FileRequest, res) => {
+    app.post('/uploadprofilepicture', uploadAvatar.single('avatar'),setContext, async (req:FileRequest, res) => {
       try {
-        const user = await User.findOne({ _id: req.user._id });
-    
-        if (!user || !user.verified) {
-          return res.status(400).send('User not verified');
-        }
-    
-        uploadAvatar(req, res, async (err) => {
-          if (err) {
-            return res.status(500).send(err.message);
-          }
-    
-          try {
+            const user = await User.findOne({_id:req.user._id})
             await user.updateOne({ $set: { profile: { avatar: req.file.path } } }, { new: true, upsert: true });
             await user.save();
             return res.status(201).send('Avatar uploaded');
-          } catch (e) {
-            return res.status(500).send(`Error updating user profile: ${e}`);
-          }
-        });
       } catch (e) {
         return res.status(500).send(`Error processing request: ${e}`);
       }
