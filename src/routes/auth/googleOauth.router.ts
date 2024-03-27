@@ -3,25 +3,25 @@ import { google } from "googleapis";
 import config from "../../config";
 import { signJwt } from "../../utils/token";
 import User from "../../models/user/user";
+import axios from "axios";
+import { appContext } from "../../start";
 
-const {oauth:
-    {google:
-        {clientId,clientSecret}
-    }, app: {baseUrl}} = config
+const { oauth: { google: { clientId, clientSecret } }, app: { baseUrl } } = config;
 
-const router = express();
+const router = express.Router();
 
-const redirectURI = "auth/google/callback";
+const redirectURI = `${baseUrl}/auth/google/callback`; // Ensure to use absolute URL
 
 const oauth2Client = new google.auth.OAuth2(
   clientId.trim(),
   clientSecret.trim(),
-  `${baseUrl}/${redirectURI}`
+  redirectURI
 );
 
 const scopes = [
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/user.phonenumbers.read"
 ];
 
 // Generate Google OAuth2 URL
@@ -48,23 +48,29 @@ router.get(`/google/callback`, async (req, res) => {
     const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
     const { data: googleUser } = await oauth2.userinfo.get();
 
-    const {email,verified_email,given_name,family_name,picture,locale} = googleUser
+    const { email, verified_email, given_name, family_name, picture, locale } = googleUser;
+    console.log(googleUser)
 
-    const user = await User.findOne({email})
+    const user = await appContext.models.User.findOne({ email });
 
-    let newUser
-    if(!user){
-      newUser = new User({
+    let _user = {
       email,
-      verified:verified_email,
-      firstname:given_name,
-      lastname:family_name,
-      profile:{avatar:picture},
-      settings:{language:locale.split('-')[0].toUpperCase()}
-    })
-    }
+      // phoneNumber:phoneNumber,
+      verified: verified_email,
+      firstname: given_name,
+      lastname: family_name,
+      profile: { avatar: picture },
+      settings: { language: locale.split('-')[0].toUpperCase() }
+    };
 
-    const token = await signJwt(googleUser);
+    let token;
+
+    if (!user) {
+      const newUser = await axios.post(`${baseUrl}/auth/register`, _user);
+      token = await signJwt(newUser.data);
+    } else {
+      token = await signJwt(user);
+    }
 
     res.cookie('access-token', token, {
       maxAge: 900000,
@@ -72,10 +78,11 @@ router.get(`/google/callback`, async (req, res) => {
       secure: false,
     });
 
-    return res.status(201).send('google oauth complete')
+    return res.status(201).send('google oauth complete');
   } catch (error) {
-    res.status(500).send(`Error fetching user: ${error}`);
+    console.error("Error fetching user:", error); 
+    return res.status(500).send(`Error fetching user: ${error.message}`);
   }
 });
 
-export default router
+export default router;
