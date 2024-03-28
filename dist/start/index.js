@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadAvatar = exports.appContext = void 0;
+exports.appContext = void 0;
 const tslib_1 = require("tslib");
 const express_1 = tslib_1.__importDefault(require("express"));
 const cors_1 = tslib_1.__importDefault(require("cors"));
@@ -13,6 +13,7 @@ const services_1 = tslib_1.__importDefault(require("../services"));
 const log_1 = tslib_1.__importDefault(require("../utils/log"));
 const routes_1 = tslib_1.__importDefault(require("../routes"));
 const user_1 = tslib_1.__importDefault(require("../models/user/user"));
+const context_1 = tslib_1.__importDefault(require("../middlewares/context"));
 exports.appContext = {};
 function start(config) {
     return tslib_1.__awaiter(this, void 0, void 0, function* () {
@@ -41,7 +42,7 @@ function start(config) {
             app.use(routes_1.default);
             // file uploads
             const avatarStorage = multer_1.default.diskStorage({
-                destination: path_1.default.join(__dirname, '../uploads/avatars'),
+                destination: path_1.default.join(__dirname, '..', 'uploads', 'avatars'),
                 filename: function (req, file, cb) {
                     cb(null, file.fieldname + '-' + Date.now() + path_1.default.extname(file.originalname));
                 }
@@ -54,16 +55,27 @@ function start(config) {
                     return cb(null, true);
                 }
                 else {
-                    cb('Error: Images only! (jpeg, jpg, png)');
+                    throw new Error('Error: Images only! (jpeg, jpg, png)');
                 }
             }
-            exports.uploadAvatar = (0, multer_1.default)({
+            const uploadAvatar = (0, multer_1.default)({
                 storage: avatarStorage,
                 limits: { fileSize: 10000000 },
                 fileFilter: function (req, file, cb) {
                     checkFileType(file, cb);
                 }
-            }).single('avatar');
+            });
+            app.post('/uploadprofilepicture', uploadAvatar.single('avatar'), context_1.default, (req, res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+                try {
+                    const user = yield user_1.default.findOne({ _id: req.user._id });
+                    yield user.updateOne({ $set: { profile: { avatar: req.file.path } } }, { new: true, upsert: true });
+                    yield user.save();
+                    return res.status(201).send('Avatar uploaded');
+                }
+                catch (e) {
+                    return res.status(500).send(`Error processing request: ${e}`);
+                }
+            }));
             app.use(express_1.default.static(path_1.default.join(__dirname, '..', 'public')));
             app.get('/uploadfile', (req, res) => {
                 res.status(200).sendFile(path_1.default.join(__dirname, '..', 'public', 'upload.html'));

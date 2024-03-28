@@ -10,10 +10,13 @@ class UserService extends app_1.default {
         super(context);
     }
     // registers user
-    registerUser(input) {
+    registerUser(req, res) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
             try {
-                const { phoneNumber } = input;
+                const { phoneNumber } = req.body;
+                if (!phoneNumber) {
+                    res.status(422).send('no input was received');
+                }
                 const _user = yield this.models.User.findOne({ phoneNumber });
                 if (_user)
                     throw new Error('User already exists');
@@ -23,24 +26,27 @@ class UserService extends app_1.default {
                 return user;
             }
             catch (e) {
-                throw new Error(`Error creating new user: ${e}`);
+                res.status(500).send(`Error creating new user: ${e}`);
             }
         });
     }
     //verifies user
-    verifyUser(VerifyUserInput) {
+    verifyUser(req, res) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const { id, verificationCode } = VerifyUserInput;
+            const { id, verificationCode } = req.body;
+            if (!id || !verificationCode) {
+                res.status(422).send('missing required fields');
+            }
             try {
                 // Find the user by Id
                 const user = yield this.authenticate_user(id);
                 // Check if the user is already verified
                 if (user.verified) {
-                    throw new Error('User is already verified');
+                    res.status(500).send('user is already verified');
                 }
                 // Check if verificationCode matches
                 if (user.verificationCode != verificationCode) {
-                    throw new Error('Invalid verification code');
+                    res.status(500).send('Invalid verification code');
                 }
                 // Set verified to true and save user
                 user.verified = true;
@@ -48,82 +54,99 @@ class UserService extends app_1.default {
                 return true;
             }
             catch (e) {
-                throw new Error(`Error validating user: ${e}`);
+                res.status(500).send(`Error validating user: ${e}`);
             }
         });
     }
     // sends password reset code to user's email
-    forgotPassword(ForgotPasswordInput) {
+    forgotPassword(req, res) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const { phoneNumber } = ForgotPasswordInput;
-            const user = yield this.models.User.findOne({ phoneNumber });
-            if (!user) {
-                throw new Error('user not found');
+            try {
+                const { phoneNumber } = req.body;
+                if (!phoneNumber) {
+                    res.status(422).send('no input received');
+                }
+                const user = yield this.models.User.findOne({ phoneNumber });
+                if (!user) {
+                    res.status(404).send('user not found');
+                }
+                if (!user.verified) {
+                    res.status(500).send('user is not verified');
+                }
+                const passwordResetCode = otp_generator_1.default.generate(4, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets: false });
+                user.passwordResetCode = passwordResetCode;
+                yield user.save();
+                yield (0, sms_1.default)(phoneNumber, `This is your cab app password reset code:${user.passwordResetCode}`);
+                log_1.default.debug(`Password reset code sent to ${user.phoneNumber}`);
+                const message = 'password reset code sent';
+                return message;
             }
-            if (!user.verified) {
-                throw new Error('user is not verified');
+            catch (e) {
+                res.status(500).send(`error handing password reset: ${e}`);
             }
-            const passwordResetCode = otp_generator_1.default.generate(4, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets: false });
-            user.passwordResetCode = passwordResetCode;
-            yield user.save();
-            yield (0, sms_1.default)(phoneNumber, `This is your cab app password reset code:${user.passwordResetCode}`);
-            log_1.default.debug(`Password reset code sent to ${user.phoneNumber}`);
-            const message = 'password reset code sent';
-            return message;
         });
     }
     // resets user's password to new password from email
-    resetPassword(ResetPasswordInput) {
+    resetPassword(req, res) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const { id, passwordResetCode, newPassword } = ResetPasswordInput;
-            const user = yield this.authenticate_user(id);
-            console.log(passwordResetCode);
-            console.log(user.passwordResetCode);
-            if (!user || user.passwordResetCode !== passwordResetCode) {
-                throw new Error('Could not reset password');
+            try {
+                const { id, passwordResetCode, newPassword } = req.body;
+                if (!id || !passwordResetCode || !newPassword) {
+                    res.status(422).send('missing required fields');
+                }
+                const user = yield this.authenticate_user(id);
+                if (!user || user.passwordResetCode !== passwordResetCode) {
+                    res.status(404).send('Could not reset password');
+                }
+                user.passwordResetCode = null;
+                user.password = newPassword;
+                yield user.save();
+                const message = 'Successfully updated password';
+                return message;
             }
-            user.passwordResetCode = null;
-            user.password = newPassword;
-            yield user.save();
-            const message = 'Successfully updated password';
-            return message;
+            catch (e) {
+                res.status(500).send('error reseting password');
+            }
         });
     }
     // login user
-    loginUser(LoginUserInput) {
+    loginUser(req, res) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const { phoneNumber, password } = LoginUserInput;
+            const { phoneNumber, password } = req.body;
+            if (!phoneNumber || !password) {
+                res.status(500).send('missing required fields');
+            }
             const user = yield this.models.User.findOne({ phoneNumber });
             if (!user) {
-                throw new Error('user not found');
+                res.status(404).send('user not found');
             }
             try {
                 const valid = yield user.validatePassword(password);
                 if (!valid) {
-                    throw new Error('password incorrect');
+                    res.status(500).send('password incorrect');
                 }
             }
             catch (e) {
-                throw new Error(e);
+                res.status(500).send('error logging in');
             }
             return user;
         });
     }
     // updates user details
-    updateUser(UpdateUserInput, userId) {
+    updateUser(req, res) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
             try {
-                const user = yield this.authenticate_user(userId);
-                if ('rating' in UpdateUserInput) {
-                    user.rating = UpdateUserInput.rating;
+                const user = yield this.authenticate_user(req.user._id);
+                if ('rating' in req.body) {
+                    user.rating = req.body.rating;
                 }
                 else {
-                    if (user._id.toString() !== userId.toString()) {
+                    if (user._id.toString() !== req.user._id.toString()) {
                         throw new Error(`Unauthorized: Cannot update another user's details`);
                     }
-                    for (const key in UpdateUserInput) {
+                    for (const key in req.body) {
                         if (key !== 'rating') {
-                            user[key] = UpdateUserInput[key];
+                            user[key] = req.body[key];
                         }
                     }
                 }
@@ -131,31 +154,31 @@ class UserService extends app_1.default {
                 return user;
             }
             catch (e) {
-                throw new Error(`Error updating user: ${e.message}`);
+                res.status(500).send(`Error updating user: ${e.message}`);
             }
         });
     }
     // deletes user account
-    deleteUser(id) {
+    deleteUser(req, res) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
-            const user = yield this.authenticate_user(id);
+            const user = yield this.authenticate_user(req.user._id);
             if (!user) {
-                throw new Error('Error deleting user');
+                res.status(404).send('Error deleting user');
             }
             try {
-                yield this.models.User.findByIdAndDelete(id);
-                return `Deleted user successfully`;
+                yield this.models.User.findByIdAndDelete(req.user._id);
+                res.status(200).send(`Deleted user successfully`);
             }
             catch (e) {
-                throw new Error(`Error deleting user`);
+                res.status(500).send(`Error deleting user`);
             }
         });
     }
     // getting user rating
-    getUserRating(userId) {
+    getUserRating(req, res) {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
             try {
-                const user = yield this.models.User.findOne({ _id: userId });
+                const user = yield this.models.User.findOne({ _id: req.user._id });
                 if (user.rating.length === 0) {
                     return {
                         averageRating: 0,
@@ -170,7 +193,7 @@ class UserService extends app_1.default {
                 };
             }
             catch (error) {
-                throw new Error('Failed to fetch ratings');
+                res.status(500).send('Failed to fetch ratings');
             }
         });
     }

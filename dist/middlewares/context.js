@@ -6,10 +6,11 @@ function setContext(req, res, next) {
     return tslib_1.__awaiter(this, void 0, void 0, function* () {
         try {
             let token;
-            req.cookies['tokens'] ? token = req.cookies['tokens'].accessToken : '';
+            req.cookies['access-token'] ? token = req.cookies['access-token'] : '';
             if (token) {
                 const decoded = yield (0, token_1.verifyJwt)(token);
                 const id = decoded._id;
+                console.log(id, decoded);
                 const user = { _id: id };
                 user ? req.user = user : null;
                 next();
