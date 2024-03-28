@@ -47,7 +47,7 @@ Before running the CabApp Engine, make sure you have the following installed:
 
 1. Clone the repository:
 
-`git clone https://github.com/jewtechx/CabApp_engine.git`
+`git clone https://github.com/jewtechx/cab_app_engine.git`
 
 2. Navigate to the `engine` directory:
 
@@ -94,7 +94,7 @@ The engine will start running on the specified port, and you can access the Grap
 
 **Base Url**
  ```bash 
-http://localhost:8080
+https://cab-app-engine.onrender.com/
 ```
 **Authentication - SMS OTP**
  ```bash 

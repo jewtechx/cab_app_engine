@@ -4,7 +4,7 @@ import { Config } from '.';
 
 const config: Config = {
   app: {
-    name: 'nestly-engine',
+    name: 'cab-app',
     port: 8080,
     env: 'development',
     baseUrl: process.env.APP_URL

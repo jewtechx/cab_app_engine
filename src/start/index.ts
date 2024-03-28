@@ -17,6 +17,7 @@ import User from "../models/user/user";
 import setContext from "../middlewares/context";
 
 export const appContext: IAppContext = {};
+export let app;
 
 export default async function start(config: Config) {
   try {
@@ -27,7 +28,7 @@ export default async function start(config: Config) {
     appContext.services = await initServices(appContext)
 
     // initialize app
-    const app = express();
+    app = express();
     app.use(express.urlencoded({ extended: true }));
 
          // cors middleware
